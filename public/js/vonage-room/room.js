@@ -6,7 +6,8 @@ const elPublisherId = "publisher";
 const elSubscribersId = "subscribers";
 const elPubShareScreenId = "pub-share-screen";
 const elSubShareScreenId = "sub-share-screen";
-const isAgentRole = roomRole === "agent";
+const activeRoomRole = typeof roomRole === "string" ? roomRole : "customer";
+const isAgentRole = activeRoomRole === "agent";
 const oneWayCustomerVideoOnly = true;
 
 // Initialize a Vonage Video session object
@@ -61,9 +62,10 @@ function initializeVonageVideo() {
       name: userName,
       height: "100%",
       width: "100%",
-      showControls: true,
-      publishAudio: !oneWayCustomerVideoOnly,
+      showControls: !oneWayCustomerVideoOnly,
+      publishAudio: false,
       publishVideo: true,
+      audioSource: oneWayCustomerVideoOnly ? null : undefined,
       style: {
         nameDisplayMode: "on",
       },
