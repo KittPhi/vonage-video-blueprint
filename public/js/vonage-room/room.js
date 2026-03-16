@@ -7,7 +7,7 @@ const elSubscribersId = 'subscribers';
 const elPubShareScreenId = 'pub-share-screen';
 const elSubShareScreenId = 'sub-share-screen';
 
-// Initialize an OpenTok Session object
+// Initialize a Vonage Video session object
 let session = null;
 
 // Initialize the camera publisher
@@ -22,8 +22,8 @@ let isSharingScreen = false;
 
 // Initial setup for the page
 function setup(){
-    // Initialize an OpenTok Session object
-    initializeTokbox();
+    // Initialize a Vonage Video session object
+    initializeVonageVideo();
 
     view.hideShareScreen();
 
@@ -40,7 +40,7 @@ function setup(){
     });
 }
 
-function initializeTokbox(){
+function initializeVonageVideo(){
     session = OT.initSession(apiKey, sessionId);
     publisher = OT.initPublisher(elPublisherId,
         {

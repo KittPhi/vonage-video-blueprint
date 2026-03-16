@@ -2,7 +2,7 @@
 
 > View the full [Vonage Video Blueprint article](https://developer.mypurecloud.com/blueprints/vonage-video-blueprint/) on the Genesys Cloud Developer Center.
 
-This Genesys Blueprint provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API (formerly TokBox OpenTok) makes it easy to embed high-quality interactive video, voice, messaging, and screen sharing into web and mobile apps. For more info on how the video platform works, check out [Video API Basics](https://tokbox.com/developer/guides/basics/).
+This Genesys Blueprint provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API makes it easy to embed high-quality interactive video, voice, messaging, and screen sharing into web and mobile apps. For more information on how the platform works, see the [Vonage Video overview](https://developer.vonage.com/en/video/overview).
 
 Genesys Cloud uses **Interaction Widget** to provide customers with a Vonage Video interaction.
 

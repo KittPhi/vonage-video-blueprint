@@ -6,18 +6,18 @@ icon: blueprint
 image: images/5.png
 category: 6
 summary: |
-  This Genesys Blueprint provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API (formerly TokBox OpenTok) makes it easy to embed high-quality interactive video, voice, messaging, and screen sharing into web and mobile apps.
+  This Genesys Blueprint provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API makes it easy to embed high-quality interactive video, voice, messaging, and screen sharing into web and mobile apps.
 ---
-:::{"alert":"primary","title":"About Genesys Cloud Blueprints","autoCollapse":false} 
-Genesys Cloud blueprints were built to help you jump-start building an application or integrating with a third-party partner. 
+
+:::{"alert":"primary","title":"About Genesys Cloud Blueprints","autoCollapse":false}
+Genesys Cloud blueprints were built to help you jump-start building an application or integrating with a third-party partner.
 Blueprints are meant to outline how to build and deploy your solutions, not a production-ready turn-key solution.
- 
-For more details on Genesys Cloud blueprint support and practices 
+
+For more details on Genesys Cloud blueprint support and practices
 please see our Genesys Cloud blueprint [FAQ](https://developer.genesys.cloud/blueprints/faq)sheet.
 :::
 
-
-This Genesys Blueprint provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API (formerly TokBox OpenTok) makes it easy to embed high-quality interactive video, voice, messaging, and screen sharing into web and mobile apps. For more info on how the video platform works, check out [Video API Basics](https://tokbox.com/developer/guides/basics/).
+This Genesys Blueprint provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API makes it easy to embed high-quality interactive video, voice, messaging, and screen sharing into web and mobile apps. For more information on how the video platform works, check out [Vonage Video overview](https://developer.vonage.com/en/video/overview).
 
 Genesys Cloud uses **Interaction Widget** to provide customers with a Vonage Video interaction.
 
@@ -66,9 +66,9 @@ A recommended Genesys Cloud role for the solutions engineer is Master Admin. For
 
 ### Vonage account requirements
 
-This solution requires a Vonage Video license. To sign up for a Vonage Video account, see [here](https://tokbox.com/account/user/signup?icid=tryitfree_comm-apis_tokboxfreetrialsignup_nav).
+This solution requires a Vonage Video license. To sign up for a Vonage Video account, see the [Vonage sign-up page](https://dashboard.nexmo.com/sign-up).
 
-The solutions engineer requires a Vonage Video account to create a project and generate a Project API Key and Project Secret.
+The solutions engineer requires a Vonage Video account to create a project and generate credentials.
 
 ## Run Locally
 
@@ -100,8 +100,8 @@ The Vonage Video integration has the following stages:
 
 ### Create or use existing Vonage Video API credentials
 
-1. Create or open an existing Vonage Video project from your Vonage account. The project needs to be a Custom Project (OpenTok API) and not an Embed Project.
-2. Take note of the Project API Key and Project secret.
+1. Create or open an existing Vonage Video project from your Vonage account.
+2. Take note of your credentials. For Unified Server SDK usage, configure application ID and private key.
 
 ### Create a configuration file
 
@@ -114,7 +114,7 @@ If you want to send invitations to the Vonage Video Room via email, then a queue
 For more information about queues and how to create them, read this [article](https://help.mypurecloud.com/articles/queues/).
 
 1. Once you have a queue, take note of the queue ID. It can be found using an [API query](https://developer.mypurecloud.com/api/rest/v2/routing/index.html) or if using the Genesys Cloud UI, in the URL.
-![1](images/queue_id.png "1")
+   ![1](images/queue_id.png "1")
 2. Enter the Queue ID into the config file.
 
 NOTE: Make sure that agents who access the interaction widget are also members of the queue.
@@ -169,7 +169,7 @@ allow-forms,allow-modals,allow-popups,allow-presentation,allow-same-origin,allow
 In the Iframe Feature/Permissions Policy, enter the following:
 
 ```
-camera,microphone,geolocation,clipboard-write,display-capture,fullscreen 
+camera,microphone,geolocation,clipboard-write,display-capture,fullscreen
 ```
 
 Select a group for filtering user access to the widget.
@@ -226,7 +226,6 @@ Clicking it will take them to a Vonage room. The agent could then invite the cus
 
 ![4](images/4.png "4")
 
-
 Client view of the room:
 
 ![5](images/5.png "5")
@@ -239,12 +238,12 @@ The agent or the customer could initiate screen sharing of their devices.
 
 ## Troubleshooting
 
-For troubleshooting information, see the [Vonage Video Troubleshooting](https://support.tokbox.com/hc/en-us/sections/360004890311-Troubleshooting).
+For troubleshooting information, see [Vonage API support](https://api.support.vonage.com/hc/en-us).
 
 ## Additional Resources
 
 - [Genesys Cloud Developer Center](https://developer.mypurecloud.com/)
 - [Genesys Cloud Platform Client SDK](https://developer.mypurecloud.com/api/rest/client-libraries/)
 - [Vonage Developer Center](https://www.vonage.com.ph/developer-center/?icmp=mainnav_developercenter_novalue)
-- [Vonage Video Client SDK](https://tokbox.com/developer/sdks/js/)
-- [Vonage Video Server SDK](https://tokbox.com/developer/sdks/server/)
+- [Vonage Video Client SDK (Web)](https://developer.vonage.com/en/video/client-sdks/web/overview)
+- [Vonage Video Server SDK (Node)](https://developer.vonage.com/en/video/server-sdks/node)

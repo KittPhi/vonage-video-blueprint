@@ -1,34 +1,39 @@
 module.exports = {
-    expressPort: 443,
-    testMode: false, 
-    appURI: 'https://localhost/',
+  expressPort: 443,
+  testMode: false,
+  appURI: "https://localhost/",
 
+  vonage: {
+    // Required for Unified server SDK auth
+    appId: "",
+    // Optional alias if your existing config uses this key name
+    applicationId: "",
+    privateKey: "", // absolute path to the private key file
 
-    vonage: {
-        apiKey: '',
-        apiSecret: ''
-    },
+    // Required by the browser Video JS SDK for OT.initSession
+    clientApiKey: "",
+  },
 
-    genesysCloud: {
-        // Genesys Cloud region
-        // eg. 'mypurecloud.ie', 'euw2.pure.cloud', etc...
-        region: 'mypurecloud.com',
+  genesysCloud: {
+    // Genesys Cloud region
+    // eg. 'mypurecloud.ie', 'euw2.pure.cloud', etc...
+    region: "mypurecloud.com",
 
-        // Implicit Grant Client ID
-        // Used by the web app itself in authorizing the Genesys Cloud agent
-        implicitGrantID: '',
+    // Implicit Grant Client ID
+    // Used by the web app itself in authorizing the Genesys Cloud agent
+    implicitGrantID: "",
 
-        // Client Credentials OAuth
-        // For authorizing the server app
-        clientID: '',
-        clientSecret: '',
+    // Client Credentials OAuth
+    // For authorizing the server app
+    clientID: "",
+    clientSecret: "",
 
-        // Required when sending invitation through email, 
-        // the outbound email will go through this ACD queue. 
-        emailQueueID: '',
+    // Required when sending invitation through email,
+    // the outbound email will go through this ACD queue.
+    emailQueueID: "",
 
-        // Required when sending invitation through SMS
-        // This number should be purchased by the Genesys Cloud organization.
-        smsFromAddress: '', // eg +13175550000
-    }
-}
+    // Required when sending invitation through SMS
+    // This number should be purchased by the Genesys Cloud organization.
+    smsFromAddress: "", // eg +13175550000
+  },
+};
