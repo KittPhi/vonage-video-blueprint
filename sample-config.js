@@ -6,9 +6,8 @@ module.exports = {
   vonage: {
     // Required for Unified server SDK auth
     appId: "",
-    // Optional alias if your existing config uses this key name
-    applicationId: "",
-    privateKey: "", // absolute path to the private key file
+    // Example: "private.key"
+    privateKey: "", // absolute path to the private key file.
   },
 
   genesysCloud: {
