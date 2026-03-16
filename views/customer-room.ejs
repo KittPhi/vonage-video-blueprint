@@ -27,22 +27,9 @@
     <%- include('common/header'); -%>
 
     <div class="container customer-room">
-      <div>
-        <span>Share Screen: </span>
-        <label class="switch">
-          <input type="checkbox" id="share-screen-switch" />
-          <span class="slider round"></span>
-        </label>
-      </div>
       <div class="container">
         <div class="row">
-          <div class="col-md mx-auto">
-            <div class="text-center">Agent</div>
-            <div class="stream-container mx-auto">
-              <div id="subscribers"></div>
-            </div>
-          </div>
-          <div class="col-md mx-auto">
+          <div class="col-md-10 mx-auto">
             <div class="text-center">Customer</div>
             <div class="stream-container mx-auto">
               <div id="publisher"></div>
@@ -53,14 +40,6 @@
           <!-- <div id="pub-share-screen"></div> -->
           <!-- <div id="sub-share-screen"></div> -->
         </div>
-      </div>
-      <div id="empty-share-screen">
-        <img
-          src="<%= appURI.replace(/\/+$/, '') %>/img/vonage-white.png"
-          alt=""
-          srcset=""
-        />
-        <p>No one is currently sharing their screen.</p>
       </div>
     </div>
     <script
