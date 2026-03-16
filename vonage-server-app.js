@@ -58,10 +58,15 @@ async function _createSession() {
 /**
  * Create a new Vonage Video room and return Vonage Video details (token, sessionId, etc.)
  * @param {String} conversationId Genesys Cloud conversation id
- * @param {String} userName Name of the agent
+ * @param {String} userName Name of the participant
+ * @param {String} participantRole logical role in app flow ('agent' or 'customer')
  * @returns {Promise<Object>} Promise representing Vonage Video details to be passed to the client app
  */
-async function _createRoom(conversationId, userName) {
+async function _createRoom(
+  conversationId,
+  userName,
+  participantRole = "customer",
+) {
   let conversationActive = config.testMode
     ? true
     : await _isConversationActive(conversationId);
@@ -78,7 +83,9 @@ async function _createRoom(conversationId, userName) {
       sessions[conversationId] = sessionId;
     }
 
+    const tokenRole = participantRole === "agent" ? "subscriber" : "publisher";
     let token = vonage.video.generateClientToken(sessionId, {
+      role: tokenRole,
       data: userName,
     });
 
