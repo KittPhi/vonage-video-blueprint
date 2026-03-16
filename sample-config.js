@@ -9,9 +9,6 @@ module.exports = {
     // Optional alias if your existing config uses this key name
     applicationId: "",
     privateKey: "", // absolute path to the private key file
-
-    // Required by the browser Video JS SDK for OT.initSession
-    clientApiKey: "",
   },
 
   genesysCloud: {

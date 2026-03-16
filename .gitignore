@@ -1,3 +1,5 @@
 .vscode
 node_modules/
 config.js
+private.key
+dev.txt

@@ -10,7 +10,6 @@ const { Vonage } = require("@vonage/server-sdk");
 // Vonage Credentials
 const appId = config.vonage.appId || config.vonage.applicationId;
 const privateKey = config.vonage.privateKey;
-const clientApiKey = config.vonage.clientApiKey || "";
 
 if (!appId || !privateKey) {
   throw new Error(
@@ -19,7 +18,7 @@ if (!appId || !privateKey) {
 }
 
 const vonage = new Vonage({
-  appId,
+  applicationId: appId,
   privateKey,
 });
 
@@ -63,12 +62,9 @@ async function _createSession() {
  * @returns {Promise<Object>} Promise representing Vonage Video details to be passed to the client app
  */
 async function _createRoom(conversationId, userName) {
-  let conversationActive = await _isConversationActive(conversationId);
-  if (!clientApiKey) {
-    throw new Error(
-      "Missing vonage.clientApiKey in config. This is required by the browser Video SDK.",
-    );
-  }
+  let conversationActive = config.testMode
+    ? true
+    : await _isConversationActive(conversationId);
 
   let sessionId = sessions[conversationId];
 
@@ -87,7 +83,7 @@ async function _createRoom(conversationId, userName) {
     });
 
     return {
-      apiKey: clientApiKey,
+      apiKey: appId,
       sessionId: sessionId,
       token: token,
       userName: userName,
@@ -184,9 +180,11 @@ function executeFunction(f) {
 }
 
 // Authenticat with GCloud on server startup
-_refreshGenesysCloudCredentials();
+if (!config.testMode) {
+  _refreshGenesysCloudCredentials();
+}
 
 module.exports = {
-  createRoom: executeFunction(_createRoom),
+  createRoom: config.testMode ? _createRoom : executeFunction(_createRoom),
   sendSMS: executeFunction(_sendSMS),
 };
