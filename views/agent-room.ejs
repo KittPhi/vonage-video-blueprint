@@ -17,6 +17,8 @@
       var sessionId = "<%= vonageData.sessionId %>";
       var token = "<%= vonageData.token %>";
       var userName = "<%= vonageData.userName %>";
+      var roomRole = "<%= roomRole %>";
+      var publishAudio = <%= publishAudio %>;
     </script>
   </head>
   <body>
@@ -36,18 +38,13 @@
             </div>
           </div>
         </div>
-        <div class="row" id="share-screen-container">
-          <!-- <div id="pub-share-screen"></div> -->
-          <!-- <div id="sub-share-screen"></div> -->
-        </div>
       </div>
-      <div id="empty-share-screen">
+      <div class="vonage-logo">
         <img
           src="<%= appURI.replace(/\/+$/, '') %>/img/vonage-gray.png"
           alt=""
           srcset=""
         />
-        <p>No one is currently sharing their screen.</p>
       </div>
     </div>
 

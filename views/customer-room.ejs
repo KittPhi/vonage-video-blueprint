@@ -20,19 +20,14 @@
       var sessionId = "<%= vonageData.sessionId %>";
       var token = "<%= vonageData.token %>";
       var userName = "<%= vonageData.userName %>";
+      var roomRole = "<%= roomRole %>";
+      var publishAudio = <%= publishAudio %>;
     </script>
   </head>
   <body>
     <%- include('common/header'); -%>
 
     <div class="container customer-room">
-      <div>
-        <span>Share Screen: </span>
-        <label class="switch">
-          <input type="checkbox" id="share-screen-switch" />
-          <span class="slider round"></span>
-        </label>
-      </div>
       <div class="container">
         <div class="row">
           <div class="col-md mx-auto">
@@ -48,18 +43,13 @@
             </div>
           </div>
         </div>
-        <div class="row" id="share-screen-container">
-          <!-- <div id="pub-share-screen"></div> -->
-          <!-- <div id="sub-share-screen"></div> -->
-        </div>
       </div>
-      <div id="empty-share-screen">
+      <div class="vonage-logo">
         <img
           src="<%= appURI.replace(/\/+$/, '') %>/img/vonage-white.png"
           alt=""
           srcset=""
         />
-        <p>No one is currently sharing their screen.</p>
       </div>
     </div>
     <script

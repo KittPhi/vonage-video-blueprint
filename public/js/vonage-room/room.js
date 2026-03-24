@@ -1,11 +1,10 @@
-/* global OT, apiKey, sessionId, token */
-
-import view from "./view.js";
+/* global OT, apiKey, sessionId, token, roomRole, publishAudio */
 
 const elPublisherId = "publisher";
 const elSubscribersId = "subscribers";
-const elPubShareScreenId = "pub-share-screen";
-const elSubShareScreenId = "sub-share-screen";
+const LAYOUT_STABLE_DELAY_MS = 450;
+const LAYOUT_OBSERVER_RETRY_MS = 250;
+const LAYOUT_OBSERVER_MAX_RETRIES = 20;
 
 // Initialize a Vonage Video session object
 let session = null;
@@ -15,84 +14,104 @@ let publisher = null;
 
 // For this demo we're just assuming one customer
 let subscriber = null;
-let screenSharePublisher = null;
-let screenShareSubscriber = null;
-let isSharingScreen = false;
+let cameraStream = null;
+let layoutStableTimer = null;
+let layoutObserver = null;
+let layoutObserverRetries = 0;
+let pendingInitialSubscribe = false;
 
 // Initial setup for the page
 function setup() {
   // Initialize a Vonage Video session object
   initializeVonageVideo();
-
-  view.hideShareScreen();
+  initializeLayoutObserver();
 
   document.addEventListener("DOMContentLoaded", function () {
-    var checkbox = window.parent.document.querySelector(
-      'input[type="checkbox"]',
-    );
-    if (checkbox) {
-      checkbox.addEventListener("change", function () {
-        if (checkbox.checked) {
-          startShareScreen();
-        } else {
-          stopShareScreen();
-        }
-      });
-    }
+    initializeLayoutObserver();
   });
+}
+
+function initializeLayoutObserver() {
+  if (layoutObserver || typeof ResizeObserver === "undefined") return;
+
+  const target = document.getElementById(elSubscribersId);
+  if (!target) {
+    if (layoutObserverRetries < LAYOUT_OBSERVER_MAX_RETRIES) {
+      layoutObserverRetries += 1;
+      setTimeout(initializeLayoutObserver, LAYOUT_OBSERVER_RETRY_MS);
+    }
+    return;
+  }
+
+  layoutObserver = new ResizeObserver(() => {
+    scheduleStableLayoutCheck("resizeObserver");
+  });
+
+  layoutObserver.observe(target);
+  layoutObserverRetries = 0;
+}
+
+function shouldCreateLocalPublisher() {
+  return roomRole !== "agent";
+}
+
+function shouldSubscribeToRemoteStreams() {
+  return roomRole === "agent";
+}
+
+function shouldPublishLocalAudio() {
+  return typeof publishAudio === "boolean" ? publishAudio : true;
 }
 
 function initializeVonageVideo() {
   session = OT.initSession(apiKey, sessionId);
-  publisher = OT.initPublisher(elPublisherId, {
-    name: userName,
-    height: "100%",
-    width: "100%",
-    showControls: true,
-    style: {
-      nameDisplayMode: "on",
-    },
-  });
+
+  if (shouldCreateLocalPublisher()) {
+    publisher = OT.initPublisher(elPublisherId, {
+      name: userName,
+      height: "100%",
+      width: "100%",
+      showControls: true,
+      publishAudio: shouldPublishLocalAudio(),
+      style: {
+        nameDisplayMode: "on",
+      },
+    });
+  }
+
   // Attach event handlers
   session.on({
     // This function runs when session.connect() asynchronously completes
     sessionConnected: function () {
+      if (!publisher) return;
+
       // Publish the publisher we initialzed earlier (this will trigger 'streamCreated' on other
       // clients)
-      session.publish(publisher);
+      session.publish(publisher, function (error) {
+        // In one-way scenarios, agent may have subscriber-only permissions.
+        if (error) {
+          console.warn("Publisher not started:", error.message || error);
+        }
+      });
     },
 
     // This function runs when another client publishes a stream (eg. session.publish())
     streamCreated: function (event) {
-      let subOptions = {
-        appendMode: "append",
-        showControls: true,
-        width: "100%",
-        height: "100%",
-        style: {
-          nameDisplayMode: "on",
-        },
-      };
+      // Customer-side in this use case is publish-only (no subscribe).
+      if (!shouldSubscribeToRemoteStreams()) {
+        return;
+      }
 
       // Set subscriber objects to global reference
       if (event.stream.videoType === "screen") {
-        // Screen share
-        view.addSubShareScreen();
-        screenShareSubscriber = session.subscribe(
-          event.stream,
-          elSubShareScreenId,
-          subOptions,
-        );
-        screenShareSubscriber.on("destroyed", onShareScreenStop);
-        view.showShareScreen();
-      } else {
-        // Subscriber main/camera
-        subscriber = session.subscribe(
-          event.stream,
-          elSubscribersId,
-          subOptions,
-        );
+        // Agent-side in this use case subscribes only to customer camera video.
+        return;
       }
+
+      // Subscriber main/camera
+      cameraStream = event.stream;
+      pendingInitialSubscribe = true;
+      scheduleStableLayoutCheck("streamCreated");
     },
 
     streamDestroyed: function (event) {
@@ -102,75 +121,132 @@ function initializeVonageVideo() {
       ) {
         window.close();
       }
+
+      if (cameraStream && event.stream.id === cameraStream.id) {
+        cameraStream = null;
+        subscriber = null;
+        pendingInitialSubscribe = false;
+      }
     },
   });
 }
 
-function startShareScreen() {
-  OT.checkScreenSharingCapability(function (response) {
-    if (!response.supported || response.extensionRegistered === false) {
-      // This browser does not support screen sharing.
-    } else if (response.extensionInstalled === false) {
-      // Prompt to install the extension.
-    } else {
-      // Screen sharing is available. Publish the screen.
-      view.addPubShareScreen();
-      view.showShareScreen();
+function canAttachSubscriber() {
+  initializeLayoutObserver();
+  const target = document.getElementById(elSubscribersId);
+  if (!target) return false;
 
-      var publishOptions = {
-        name: userName + "'s screen",
-        videoSource: "screen",
-        width: "100%",
-        height: "100%",
-        appendMode: "append",
-        style: {
-          nameDisplayMode: "on",
-        },
-      };
+  // In this layout, #subscribers can be empty (height 0) until OT inserts media.
+  // Gate on visible container dimensions instead of target's initial height.
+  const targetRect = target.getBoundingClientRect();
+  const container = target.closest(".stream-container") || target.parentElement;
+  const containerRect = container
+    ? container.getBoundingClientRect()
+    : { width: 0, height: 0 };
 
-      screenSharePublisher = OT.initPublisher(
-        elPubShareScreenId,
-        publishOptions,
-        function (error) {
-          if (error) {
-            console.error(error);
-            onShareScreenStop();
-          } else {
-            session.publish(screenSharePublisher, function (error) {
-              isSharingScreen = true;
-              if (error) console.error(error);
-            });
-          }
-        },
-      );
-
-      screenSharePublisher.on("streamDestroyed", onShareScreenStop);
-    }
-  });
+  return (
+    containerRect.width > 0 &&
+    containerRect.height > 0 &&
+    (targetRect.width > 0 || containerRect.width > 0)
+  );
 }
 
-function stopShareScreen() {
-  if (isSharingScreen) {
-    screenSharePublisher.destroy();
-    isSharingScreen = false;
+function isSubscriberHealthy() {
+  if (!subscriber || !cameraStream) return false;
+  if (!canAttachSubscriber()) return false;
+
+  try {
+    return !!subscriber.stream && subscriber.stream.id === cameraStream.id;
+  } catch (e) {
+    return false;
   }
 }
 
-/**
- * If subscriber or publisher stops a screen share
- */
-function onShareScreenStop(event) {
-  setTimeout(() => {
-    if (!view.isAnyoneSharing()) view.hideShareScreen();
+function getSubscriberOptions() {
+  return {
+    appendMode: "append",
+    showControls: true,
+    subscribeToAudio: false,
+    subscribeToVideo: true,
+    width: "100%",
+    height: "100%",
+    style: {
+      nameDisplayMode: "on",
+    },
+  };
+}
 
-    // Dirty way of switching the share screen switch off
-    let checkbox = window.parent.document.querySelector(
-      'input[type="checkbox"]',
-    );
-    if (checkbox) checkbox.checked = false;
-  }, 100);
+function subscribeToCamera(subOptions) {
+  if (!cameraStream || !session) return;
+
+  if (subscriber) {
+    return;
+  }
+
+  if (!canAttachSubscriber()) {
+    return;
+  }
+
+  const createdSubscriber = session.subscribe(
+    cameraStream,
+    elSubscribersId,
+    subOptions,
+    function (error) {
+      if (!error) return;
+
+      console.error("Camera subscribe failed:", error);
+      subscriber = null;
+      pendingInitialSubscribe = true;
+      scheduleStableLayoutCheck("subscribeError");
+    },
+  );
+
+  if (createdSubscriber) {
+    subscriber = createdSubscriber;
+    pendingInitialSubscribe = false;
+    subscriber.on("destroyed", () => {
+      subscriber = null;
+      if (cameraStream) {
+        scheduleStableLayoutCheck("subscriberDestroyed");
+      }
+    });
+  }
+}
+
+function scheduleStableLayoutCheck() {
+  if (layoutStableTimer) {
+    clearTimeout(layoutStableTimer);
+  }
+
+  layoutStableTimer = setTimeout(() => {
+    recoverSubscriberAfterLayoutChange();
+  }, LAYOUT_STABLE_DELAY_MS);
+}
+
+function recoverSubscriberAfterLayoutChange() {
+  if (!cameraStream || !session) return;
+
+  // Initial subscribe is delayed until layout settles and a real container exists.
+  if (pendingInitialSubscribe) {
+    subscribeToCamera(getSubscriberOptions());
+    return;
+  }
+
+  // Non-destructive resize recovery: only re-subscribe when health check fails.
+  if (!isSubscriberHealthy()) {
+    subscriber = null;
+    subscribeToCamera(getSubscriberOptions());
+  }
 }
 
 setup();
+window.addEventListener("resize", () => {
+  scheduleStableLayoutCheck("windowResize");
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    scheduleStableLayoutCheck("visibilitychange");
+  }
+});
 // Connect to the Session using the 'apiKey' of the application and a 'token' for permission
 session.connect(token);
