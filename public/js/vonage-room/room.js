@@ -1,4 +1,4 @@
-/* global OT, apiKey, sessionId, token, userName, roomRole */
+/* global OT, apiKey, sessionId, token */
 
 import view from "./view.js";
 
@@ -6,9 +6,6 @@ const elPublisherId = "publisher";
 const elSubscribersId = "subscribers";
 const elPubShareScreenId = "pub-share-screen";
 const elSubShareScreenId = "sub-share-screen";
-const activeRoomRole = typeof roomRole === "string" ? roomRole : "customer";
-const isAgentRole = activeRoomRole === "agent";
-const oneWayCustomerVideoOnly = true;
 
 // Initialize a Vonage Video session object
 let session = null;
@@ -29,21 +26,11 @@ function setup() {
 
   view.hideShareScreen();
 
-  if (isAgentRole) {
-    const publisherEl = document.getElementById(elPublisherId);
-    if (publisherEl) {
-      publisherEl.style.display = "none";
-    }
-  }
-
   document.addEventListener("DOMContentLoaded", function () {
     var checkbox = window.parent.document.querySelector(
       'input[type="checkbox"]',
     );
     if (checkbox) {
-      checkbox.disabled = oneWayCustomerVideoOnly;
-    }
-    if (checkbox && !oneWayCustomerVideoOnly) {
       checkbox.addEventListener("change", function () {
         if (checkbox.checked) {
           startShareScreen();
@@ -57,29 +44,22 @@ function setup() {
 
 function initializeVonageVideo() {
   session = OT.initSession(apiKey, sessionId);
-  if (!isAgentRole) {
-    publisher = OT.initPublisher(elPublisherId, {
-      name: userName,
-      height: "100%",
-      width: "100%",
-      showControls: !oneWayCustomerVideoOnly,
-      publishAudio: false,
-      publishVideo: true,
-      audioSource: oneWayCustomerVideoOnly ? null : undefined,
-      style: {
-        nameDisplayMode: "on",
-      },
-    });
-  }
+  publisher = OT.initPublisher(elPublisherId, {
+    name: userName,
+    height: "100%",
+    width: "100%",
+    showControls: true,
+    style: {
+      nameDisplayMode: "on",
+    },
+  });
   // Attach event handlers
   session.on({
     // This function runs when session.connect() asynchronously completes
     sessionConnected: function () {
       // Publish the publisher we initialzed earlier (this will trigger 'streamCreated' on other
       // clients)
-      if (publisher) {
-        session.publish(publisher);
-      }
+      session.publish(publisher);
     },
 
     // This function runs when another client publishes a stream (eg. session.publish())
@@ -89,8 +69,6 @@ function initializeVonageVideo() {
         showControls: true,
         width: "100%",
         height: "100%",
-        subscribeToAudio: !(oneWayCustomerVideoOnly && isAgentRole),
-        subscribeToVideo: true,
         style: {
           nameDisplayMode: "on",
         },
@@ -129,10 +107,6 @@ function initializeVonageVideo() {
 }
 
 function startShareScreen() {
-  if (oneWayCustomerVideoOnly) {
-    return;
-  }
-
   OT.checkScreenSharingCapability(function (response) {
     if (!response.supported || response.extensionRegistered === false) {
       // This browser does not support screen sharing.

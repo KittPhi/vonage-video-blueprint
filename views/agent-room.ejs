@@ -17,14 +17,19 @@
       var sessionId = "<%= vonageData.sessionId %>";
       var token = "<%= vonageData.token %>";
       var userName = "<%= vonageData.userName %>";
-      var roomRole = "agent";
     </script>
   </head>
   <body>
     <div class="agent-page">
       <div class="agent-container container-fluid">
         <div class="row">
-          <div class="col-sm-10 mx-auto">
+          <div class="col-sm mx-auto">
+            <div class="text-center">Agent</div>
+            <div class="stream-container mx-auto">
+              <div id="publisher"></div>
+            </div>
+          </div>
+          <div class="col-sm mx-auto">
             <div class="text-center">Customer</div>
             <div class="stream-container mx-auto">
               <div id="subscribers"></div>
@@ -35,6 +40,14 @@
           <!-- <div id="pub-share-screen"></div> -->
           <!-- <div id="sub-share-screen"></div> -->
         </div>
+      </div>
+      <div id="empty-share-screen">
+        <img
+          src="<%= appURI.replace(/\/+$/, '') %>/img/vonage-gray.png"
+          alt=""
+          srcset=""
+        />
+        <p>No one is currently sharing their screen.</p>
       </div>
     </div>
 
