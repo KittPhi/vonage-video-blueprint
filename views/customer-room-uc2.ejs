@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Customer Room</title>
     <link
       rel="stylesheet"
       href="<%= appURI.replace(/\/+$/, '') %>/css/style.css"
@@ -24,6 +24,47 @@
       var publishAudio = <%- JSON.stringify(publishAudio) %>;
       var useCase = <%- JSON.stringify(useCase) %>;
     </script>
+    <style>
+      .agent-speaking-indicator {
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 10;
+        width: 190px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        border-radius: 10px;
+        padding: 0.55rem;
+        transition: border-color 120ms ease-in-out;
+      }
+
+      .customer-speaking-indicator {
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        border-radius: 10px;
+        transition: border-color 120ms ease-in-out;
+      }
+
+      .agent-speaking-indicator.is-speaking {
+        border-color: #2bd576;
+      }
+
+      .customer-speaking-indicator.is-speaking {
+        border-color: #2bd576;
+      }
+
+      .agent-audio-placeholder {
+        width: 100%;
+        height: 68px;
+      }
+
+      .customer-main-tile {
+        position: relative;
+      }
+
+      .customer-main-tile #publisher {
+        width: 100%;
+      }
+    </style>
   </head>
   <body>
     <%- include('common/header'); -%>
@@ -31,10 +72,20 @@
     <div class="container customer-room">
       <div class="container">
         <div class="row">
+          <!-- Customer's own video (published) -->
           <div class="col-md-12 mx-auto">
             <div class="text-center">Customer</div>
-            <div class="stream-container mx-auto">
+            <div
+              id="customer-speaking-indicator"
+              class="stream-container mx-auto customer-main-tile customer-speaking-indicator"
+            >
               <div id="publisher"></div>
+              <div
+                id="remote-speaking-indicator"
+                class="agent-speaking-indicator"
+              >
+                <div id="subscribers" class="agent-audio-placeholder"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -47,6 +98,7 @@
         />
       </div>
     </div>
+
     <script
       type="module"
       src="<%= appURI.replace(/\/+$/, '') %>/js/vonage-room/room.js"

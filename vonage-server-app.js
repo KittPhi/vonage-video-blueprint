@@ -60,12 +60,14 @@ async function _createSession() {
  * @param {String} conversationId Genesys Cloud conversation id
  * @param {String} userName Name of the participant
  * @param {String} participantRole logical role in app flow ('agent' or 'customer')
+ * @param {Number} useCase 1 = video-only (agent subscribes only), 2 = audio+video (agent publishes audio)
  * @returns {Promise<Object>} Promise representing Vonage Video details to be passed to the client app
  */
 async function _createRoom(
   conversationId,
   userName,
   participantRole = "customer",
+  useCase = 1,
 ) {
   let conversationActive = config.testMode
     ? true
@@ -83,7 +85,10 @@ async function _createRoom(
       sessions[conversationId] = sessionId;
     }
 
-    const tokenRole = participantRole === "agent" ? "subscriber" : "publisher";
+    // UC1: agent is subscriber-only (no publishing at all).
+    // UC2: agent publishes audio, so needs a publisher token.
+    const tokenRole =
+      participantRole === "agent" && useCase === 1 ? "subscriber" : "publisher";
     let token = vonage.video.generateClientToken(sessionId, {
       role: tokenRole,
       data: userName,

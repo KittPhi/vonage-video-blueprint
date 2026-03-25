@@ -45,18 +45,22 @@ app.get("/", async (req, res) => {
   }
 });
 
-// Create a session if not yet created
-app.get("/room/agent/:conversation_id", async (req, res) => {
+// ── Use Case 2 ── Agent publishes audio only; Customer publishes audio + video ──
+// NOTE: UC2 routes must be registered before UC1 so Express does not match
+// "/room/agent/uc2/:id" as UC1 with conversation_id = "uc2".
+
+app.get("/room/agent/uc2/:conversation_id", async (req, res) => {
   let conversation_id = req.params.conversation_id;
   let userName = req.query.username || "N/A";
 
   vonageApp
-    .createRoom(conversation_id, userName, "agent")
+    .createRoom(conversation_id, userName, "agent", 2)
     .then((vonageData) => {
-      res.render("agent-room.ejs", {
+      res.render("agent-room-uc2.ejs", {
         vonageData: vonageData,
         roomRole: "agent",
-        publishAudio: false,
+        publishAudio: true,
+        useCase: 2,
         appURI: appURI,
       });
     })
@@ -68,19 +72,66 @@ app.get("/room/agent/:conversation_id", async (req, res) => {
     });
 });
 
-// Create room for customer participant
+app.get("/room/customer/uc2/:conversation_id", async (req, res) => {
+  let conversation_id = req.params.conversation_id;
+  let userName = req.query.username || "N/A";
+
+  vonageApp
+    .createRoom(conversation_id, userName, "customer", 2)
+    .then((vonageData) => {
+      res.render("customer-room-uc2.ejs", {
+        vonageData: vonageData,
+        roomRole: "customer",
+        publishAudio: true,
+        useCase: 2,
+        appURI: appURI,
+      });
+    })
+    .catch((e) => {
+      console.error(e);
+      res.render("error.ejs", {
+        message: e && e.message ? e.message : undefined,
+      });
+    });
+});
+
+// ── Use Case 1 ── Agent subscribes to customer video only; neither publishes audio ──
+
+app.get("/room/agent/:conversation_id", async (req, res) => {
+  let conversation_id = req.params.conversation_id;
+  let userName = req.query.username || "N/A";
+
+  vonageApp
+    .createRoom(conversation_id, userName, "agent", 1)
+    .then((vonageData) => {
+      res.render("agent-room.ejs", {
+        vonageData: vonageData,
+        roomRole: "agent",
+        publishAudio: false,
+        useCase: 1,
+        appURI: appURI,
+      });
+    })
+    .catch((e) => {
+      console.error(e);
+      res.render("error.ejs", {
+        message: e && e.message ? e.message : undefined,
+      });
+    });
+});
+
 app.get("/room/customer/:conversation_id", async (req, res) => {
   let conversation_id = req.params.conversation_id;
   let userName = req.query.username || "N/A";
-  const publishAudio = false;
 
   vonageApp
-    .createRoom(conversation_id, userName, "customer")
+    .createRoom(conversation_id, userName, "customer", 1)
     .then((vonageData) => {
       res.render("customer-room.ejs", {
         vonageData: vonageData,
         roomRole: "customer",
-        publishAudio: publishAudio,
+        publishAudio: false,
+        useCase: 1,
         appURI: appURI,
       });
     })

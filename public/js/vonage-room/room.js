@@ -1,10 +1,12 @@
-/* global OT, apiKey, sessionId, token, roomRole, publishAudio */
+/* global OT, apiKey, sessionId, token, roomRole, publishAudio, useCase */
 
 const elPublisherId = "publisher";
 const elSubscribersId = "subscribers";
 const LAYOUT_STABLE_DELAY_MS = 450;
 const LAYOUT_OBSERVER_RETRY_MS = 250;
 const LAYOUT_OBSERVER_MAX_RETRIES = 20;
+const SPEAKING_LEVEL_THRESHOLD = 0.01;
+const SPEAKING_HOLD_MS = 250;
 
 // Initialize a Vonage Video session object
 let session = null;
@@ -19,6 +21,63 @@ let layoutStableTimer = null;
 let layoutObserver = null;
 let layoutObserverRetries = 0;
 let pendingInitialSubscribe = false;
+const speakingTimers = {};
+
+function markSpeaking(indicatorId) {
+  const indicator = document.getElementById(indicatorId);
+  if (!indicator) return;
+
+  indicator.classList.add("is-speaking");
+  if (speakingTimers[indicatorId]) {
+    clearTimeout(speakingTimers[indicatorId]);
+  }
+
+  speakingTimers[indicatorId] = setTimeout(() => {
+    indicator.classList.remove("is-speaking");
+  }, SPEAKING_HOLD_MS);
+}
+
+function setupSpeakingIndicator() {
+  if (!publisher) return;
+
+  // Local speaking should only highlight the local participant tile.
+  const indicatorId =
+    roomRole === "agent"
+      ? "agent-speaking-indicator"
+      : "customer-speaking-indicator";
+  if (!document.getElementById(indicatorId)) return;
+
+  publisher.on("audioLevelUpdated", (event) => {
+    const level =
+      event && typeof event.audioLevel === "number" ? event.audioLevel : 0;
+    if (level > SPEAKING_LEVEL_THRESHOLD) {
+      markSpeaking(indicatorId);
+    }
+  });
+}
+
+function setupRemoteSpeakingIndicator(activeSubscriber) {
+  if (!activeSubscriber) return;
+  if (useCase !== 2) return;
+
+  let indicatorId = null;
+  if (roomRole === "customer") {
+    // Customer page indicates when agent (remote) is speaking.
+    indicatorId = "remote-speaking-indicator";
+  } else if (roomRole === "agent") {
+    // Agent page indicates when customer (remote) is speaking.
+    indicatorId = "customer-speaking-indicator";
+  }
+  if (!document.getElementById(indicatorId)) return;
+
+  activeSubscriber.on("audioLevelUpdated", (event) => {
+    const level =
+      event && typeof event.audioLevel === "number" ? event.audioLevel : 0;
+    if (level > SPEAKING_LEVEL_THRESHOLD) {
+      markSpeaking(indicatorId);
+    }
+  });
+}
 
 // Initial setup for the page
 function setup() {
@@ -52,17 +111,31 @@ function initializeLayoutObserver() {
 }
 
 function shouldCreateLocalPublisher() {
-  return roomRole !== "agent";
+  // UC1 agent: subscriber token only, publishes nothing.
+  if (useCase === 1 && roomRole === "agent") return false;
+  // UC2 agent: publishes audio only.
+  // All customers: always publish (video in UC1, audio+video in UC2).
+  return true;
 }
 
 function shouldSubscribeToRemoteStreams() {
-  return roomRole === "agent";
+  // UC1: only agent subscribes (to customer video).
+  // UC2: agent subscribes to customer video; customer subscribes to agent audio.
+  return roomRole === "agent" || useCase === 2;
 }
 
 function shouldPublishLocalAudio() {
-  // Requirement: customer must be video-only.
-  if (roomRole === "customer") return false;
-  return typeof publishAudio === "boolean" ? publishAudio : false;
+  // UC1: nobody publishes audio.
+  if (useCase === 1) return false;
+  // UC2: both agent and customer publish audio.
+  return true;
+}
+
+function shouldPublishLocalVideo() {
+  // UC2 agent: audio only, no video.
+  if (useCase === 2 && roomRole === "agent") return false;
+  // All other publishers (customers in both UCs) publish video.
+  return true;
 }
 
 function initializeVonageVideo() {
@@ -73,17 +146,20 @@ function initializeVonageVideo() {
       name: userName,
       height: "100%",
       width: "100%",
-      showControls: roomRole !== "customer",
+      showControls: useCase === 2,
       publishAudio: shouldPublishLocalAudio(),
+      publishVideo: shouldPublishLocalVideo(),
       style: {
         nameDisplayMode: "on",
       },
     });
 
-    // Hard guard in case upstream flags drift: customer never publishes audio.
-    if (roomRole === "customer" && publisher) {
+    // UC1 hard guard: customer never publishes audio in use case 1.
+    if (useCase === 1 && roomRole === "customer" && publisher) {
       publisher.publishAudio(false);
     }
+
+    setupSpeakingIndicator();
   }
 
   // Attach event handlers
@@ -170,11 +246,14 @@ function isSubscriberHealthy() {
 }
 
 function getSubscriberOptions() {
+  // UC2 customer subscribes to agent's audio stream (agent has no video).
+  const audioOnly = useCase === 2 && roomRole === "customer";
   return {
     appendMode: "append",
     showControls: false,
-    subscribeToAudio: false,
-    subscribeToVideo: true,
+    // UC2 agent also subscribes to audio so remote speaking level is available.
+    subscribeToAudio: useCase === 2 ? true : audioOnly,
+    subscribeToVideo: !audioOnly,
     width: "100%",
     height: "100%",
     style: {
@@ -211,6 +290,7 @@ function subscribeToCamera(subOptions) {
   if (createdSubscriber) {
     subscriber = createdSubscriber;
     pendingInitialSubscribe = false;
+    setupRemoteSpeakingIndicator(subscriber);
     subscriber.on("destroyed", () => {
       subscriber = null;
       if (cameraStream) {

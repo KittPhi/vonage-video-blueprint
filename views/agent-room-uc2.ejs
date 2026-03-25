@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Agent Room</title>
     <link
       rel="stylesheet"
       href="<%= appURI.replace(/\/+$/, '') %>/css/style.css"
@@ -21,15 +21,59 @@
       var publishAudio = <%- JSON.stringify(publishAudio) %>;
       var useCase = <%- JSON.stringify(useCase) %>;
     </script>
+    <style>
+      .agent-speaking-indicator {
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 10;
+        width: 180px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        border-radius: 10px;
+        padding: 0.5rem;
+        transition: border-color 120ms ease-in-out;
+      }
+
+      .customer-speaking-indicator {
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        border-radius: 10px;
+        transition: border-color 120ms ease-in-out;
+      }
+
+      .agent-speaking-indicator.is-speaking {
+        border-color: #2bd576;
+      }
+
+      .customer-speaking-indicator.is-speaking {
+        border-color: #2bd576;
+      }
+
+      .agent-speaking-indicator #publisher {
+        width: 100%;
+        height: 92px;
+      }
+    </style>
   </head>
   <body>
     <div class="agent-page">
       <div class="agent-container container-fluid">
         <div class="row">
+          <!-- Customer video (subscribed) -->
           <div class="col-sm-12 mx-auto">
             <div class="text-center">Customer</div>
-            <div class="stream-container mx-auto">
+            <div
+              id="customer-speaking-indicator"
+              class="stream-container mx-auto customer-speaking-indicator"
+              style="position: relative"
+            >
               <div id="subscribers"></div>
+              <div
+                id="agent-speaking-indicator"
+                class="agent-speaking-indicator"
+              >
+                <div id="publisher"></div>
+              </div>
             </div>
           </div>
         </div>
