@@ -2,4 +2,7 @@
 node_modules/
 config.js
 private.key
-dev.txt
+
+# Local development helpers and samples (never commit)
+/dev/
+dev/**
