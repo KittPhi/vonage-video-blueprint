@@ -60,7 +60,9 @@ function shouldSubscribeToRemoteStreams() {
 }
 
 function shouldPublishLocalAudio() {
-  return typeof publishAudio === "boolean" ? publishAudio : true;
+  // Requirement: customer must be video-only.
+  if (roomRole === "customer") return false;
+  return typeof publishAudio === "boolean" ? publishAudio : false;
 }
 
 function initializeVonageVideo() {
@@ -77,6 +79,11 @@ function initializeVonageVideo() {
         nameDisplayMode: "on",
       },
     });
+
+    // Hard guard in case upstream flags drift: customer never publishes audio.
+    if (roomRole === "customer" && publisher) {
+      publisher.publishAudio(false);
+    }
   }
 
   // Attach event handlers

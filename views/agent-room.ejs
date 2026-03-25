@@ -18,20 +18,14 @@
       var token = "<%= vonageData.token %>";
       var userName = "<%= vonageData.userName %>";
       var roomRole = "<%= roomRole %>";
-      var publishAudio = <%= publishAudio %>;
+      var publishAudio = <%- JSON.stringify(publishAudio) %>;
     </script>
   </head>
   <body>
     <div class="agent-page">
       <div class="agent-container container-fluid">
         <div class="row">
-          <div class="col-sm mx-auto">
-            <div class="text-center">Agent</div>
-            <div class="stream-container mx-auto">
-              <div id="publisher"></div>
-            </div>
-          </div>
-          <div class="col-sm mx-auto">
+          <div class="col-sm-12 mx-auto">
             <div class="text-center">Customer</div>
             <div class="stream-container mx-auto">
               <div id="subscribers"></div>
