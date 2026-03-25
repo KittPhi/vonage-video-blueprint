@@ -73,7 +73,7 @@ function initializeVonageVideo() {
       name: userName,
       height: "100%",
       width: "100%",
-      showControls: true,
+      showControls: roomRole !== "customer",
       publishAudio: shouldPublishLocalAudio(),
       style: {
         nameDisplayMode: "on",
@@ -172,7 +172,7 @@ function isSubscriberHealthy() {
 function getSubscriberOptions() {
   return {
     appendMode: "append",
-    showControls: true,
+    showControls: false,
     subscribeToAudio: false,
     subscribeToVideo: true,
     width: "100%",
