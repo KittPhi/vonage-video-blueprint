@@ -2,13 +2,42 @@
 
 > View the original [Vonage Video Blueprint article](https://developer.mypurecloud.com/blueprints/vonage-video-blueprint/) on the Genesys Cloud Developer Center.
 
-This Genesys Blueprint provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API makes it easy to embed high-quality interactive video, voice, messaging, and screen sharing into web and mobile apps. For more information on how the platform works, see the [Vonage Video overview](https://developer.vonage.com/en/video/overview).
+This is a modifed Genesys Blueprint that provides instructions for deploying Vonage Video on Genesys Cloud. The Vonage Video API makes it easy to embed high-quality interactive video, voice and messaging into web and mobile apps. For more information on how the platform works, see the [Vonage Video overview](https://developer.vonage.com/en/video/overview).
 
 Genesys Cloud uses **Interaction Widget** to provide customers with a Vonage Video interaction.
 
 ![Flowchart](blueprint/images/flowchart.png "Flowchart")
 
-## Run Demo Locally
+## Dual Use Cases
+
+### Use Case One (UC1) Requirements
+
+- Agent publishes nothing.
+- Agent subscribes only to customer video.
+- Agent hears no customer audio.
+- Neither side publishes audio.
+- Agent UI shows only customer video.
+- Customer UI shows only own video.
+- Agent does not have local publisher tile.
+- Customer cannot enable microphone.
+
+### Use Case Two (UC2) Requirements
+
+- Agent publishes audio only (no video).
+- Customer publishes audio + video.
+- Agent subscribes to customer video.
+- Customer subscribes to agent audio only.
+- Agent can mute/unmute own's mic.
+- Customer can mute/unmute own's mic and has local video.
+- Customer hears agent audio.
+- Agent view keeps customer video as the primary tile.
+- Agent view highlights customer container border when customer speaks.
+- Customer view highlights customer container border when customer speaks.
+- Customer view highlights agent audio container border when agent speaks.
+- Agent UI shows customer video full view with speaking-state border highlights.
+- Customer UI shows own video with an embedded agent-audio area and speaking-state border highlights.
+
+## Run Both Use Cases Locally to Demo
 
 ### 1. Install and start
 
@@ -37,13 +66,7 @@ Replace `<conversationId>` and `<username>` in the URLs below.
 
 ### Use Case 1 (one-way video)
 
-Requirements implemented:
-
-- Agent publishes nothing.
-- Agent subscribes only to customer video.
-- Neither side publishes audio.
-- Agent UI shows only customer video.
-- Customer UI shows only own video.
+Behavior follows the UC1 requirements listed above.
 
 Open these routes:
 
@@ -52,37 +75,12 @@ Open these routes:
 
 ### Use Case 2 (agent audio + customer audio/video)
 
-Requirements implemented:
-
-- Agent publishes audio only (no video).
-- Customer publishes audio + video.
-- Agent subscribes to customer video.
-- Customer subscribes to agent audio only.
-- Agent UI shows customer video full view with speaking-state border highlights.
-- Customer UI shows own video with an embedded agent-audio area and speaking-state border highlights.
+Behavior follows the UC2 requirements listed above.
 
 Open these routes:
 
 - Agent: `https://localhost:8080/room/agent/uc2/<conversationId>?username=<username>`
 - Customer: `https://localhost:8080/room/customer/uc2/<conversationId>?username=<username>`
-
-## Quick Validation Checklist
-
-### UC1 checks
-
-- Agent does not have local publisher tile.
-- Agent hears no customer audio.
-- Customer cannot enable microphone.
-
-### UC2 checks
-
-- Agent has no local video but can mute/unmute mic.
-- Customer can mute/unmute mic and has local video.
-- Customer hears agent audio.
-- Agent view keeps customer video as the primary tile.
-- Agent view highlights customer container border when customer speaks.
-- Customer view highlights customer container border when customer speaks.
-- Customer view highlights agent audio container border when agent speaks.
 
 ## Vonage Video API Implementation
 
@@ -109,7 +107,7 @@ if (!sessions[conversationId]) {
 
 ### 2. Server issues role-based Vonage tokens
 
-The token role is what enforces who can publish and who can only subscribe.
+The token role enforces who can publish and who can only subscribe. In UC1, the agent gets a `subscriber` token; in UC2, the agent gets a `publisher` token.
 
 ```js
 // vonage-server-app.js
@@ -125,6 +123,8 @@ const token = vonage.video.generateClientToken(sessionId, {
 ### 3. Express routes select the use case and view
 
 The route determines `useCase`, template, and publish flags sent to the browser.
+
+For Use Case 2, both users `publishAudio`.
 
 ```js
 // web-server.js (UC2 examples)
@@ -147,6 +147,8 @@ app.get("/room/agent/uc2/:conversation_id", async (req, res) => {
 
 The client uses global values rendered by EJS (`apiKey`, `sessionId`, `token`, `roomRole`, `useCase`) and enforces media behavior with helper functions.
 
+These helpers gate local publish behavior by use case and participant role.
+
 ```js
 // public/js/vonage-room/room.js
 function shouldCreateLocalPublisher() {
@@ -167,7 +169,7 @@ function shouldPublishLocalVideo() {
 
 ### 5. Speaking state uses audio-level events + CSS border highlight
 
-Border highlights are toggled with `is-speaking` based on local publisher audio levels and remote subscriber audio levels.
+Speaking state is detected via the Video API `audioLevelUpdated` event, then reflected by toggling `is-speaking` on local and remote containers.
 
 ```js
 // public/js/vonage-room/room.js
