@@ -271,15 +271,54 @@ function sendLinkToSMS(address) {
 }
 
 /**
- * If the current conversation is call get the ANI
- * if not return null
+ * Get the best customer phone number for SMS based on call direction.
  */
 function getCurrentCustomerANI() {
-  let customer = currentConversation.participants.find(
-    (p) => p.purpose == "customer",
+  const customer = currentConversation?.participants?.find(
+    (p) => p.purpose === "customer",
   );
-  // Remove 'tel:' prefix
-  return customer && customer.ani ? customer.ani.substr(4) : null;
+
+  if (!customer) return null;
+
+  const stripTel = (value) =>
+    typeof value === "string" ? value.replace(/^tel:/, "") : null;
+
+  // Prefer a non-terminated call leg when multiple call objects exist.
+  const call =
+    customer.calls?.find(
+      (c) => (c.state || "").toLowerCase() !== "terminated",
+    ) || customer.calls?.[0];
+
+  if (call?.direction) {
+    const direction = call.direction.toLowerCase();
+
+    if (direction === "outbound") {
+      // Outbound: customer is the dialed destination.
+      return stripTel(customer.dnis) || stripTel(customer.address) || null;
+    }
+
+    if (direction === "inbound") {
+      // Inbound: customer is the caller, but only accept ANI when it is a tel: address.
+      const aniTel =
+        typeof customer.ani === "string" && customer.ani.startsWith("tel:")
+          ? stripTel(customer.ani)
+          : null;
+
+      return (
+        aniTel || stripTel(customer.address) || stripTel(customer.dnis) || null
+      );
+    }
+  }
+
+  // Fallback when direction is unavailable.
+  const fallbackAni =
+    typeof customer.ani === "string" && customer.ani.startsWith("tel:")
+      ? stripTel(customer.ani)
+      : null;
+
+  return (
+    stripTel(customer.dnis) || stripTel(customer.address) || fallbackAni || null
+  );
 }
 
 /**
