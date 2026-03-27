@@ -7,6 +7,7 @@ const LAYOUT_OBSERVER_RETRY_MS = 250;
 const LAYOUT_OBSERVER_MAX_RETRIES = 20;
 const SPEAKING_LEVEL_THRESHOLD = 0.01;
 const SPEAKING_HOLD_MS = 250;
+const VIDEO_FIT_MODE = "contain"; // "contain" to letterbox and avoid cropping, "cover" to fill and crop
 
 // Initialize a Vonage Video session object
 let session = null;
@@ -147,6 +148,7 @@ function initializeVonageVideo() {
       height: "100%",
       width: "100%",
       showControls: useCase === 2,
+      fitMode: VIDEO_FIT_MODE, // "contain" to letterbox and avoid cropping, "cover" to fill and crop
       publishAudio: shouldPublishLocalAudio(),
       publishVideo: shouldPublishLocalVideo(),
       style: {
@@ -251,6 +253,7 @@ function getSubscriberOptions() {
   return {
     appendMode: "append",
     showControls: false,
+    fitMode: VIDEO_FIT_MODE, // "contain" to letterbox and avoid cropping, "cover" to fill and crop
     // UC2 agent also subscribes to audio so remote speaking level is available.
     subscribeToAudio: useCase === 2 ? true : audioOnly,
     subscribeToVideo: !audioOnly,
