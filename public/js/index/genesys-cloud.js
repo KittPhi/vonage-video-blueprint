@@ -9,6 +9,20 @@ client.setPersistSettings(true, "VonageIntegration");
 // Constants
 const ENV_QUERY_PARAM = "environment";
 
+function normalizePcEnvironment(envParam) {
+  if (!envParam) return null;
+
+  try {
+    if (envParam.startsWith("http")) {
+      envParam = new URL(envParam).hostname;
+    }
+  } catch (e) {
+    // Keep original value when URL parsing fails.
+  }
+
+  return envParam.replace(/^apps\./, "");
+}
+
 // Client App instance
 let vonageClientApp = null;
 
@@ -337,7 +351,7 @@ function getCurrentCustomerEmail() {
  */
 function initializeClientApp() {
   let ClientApp = window.purecloud.apps.ClientApp;
-  let envParam = urlParams.get(ENV_QUERY_PARAM);
+  let envParam = normalizePcEnvironment(urlParams.get(ENV_QUERY_PARAM));
 
   if (!envParam) {
     envParam =
@@ -347,12 +361,67 @@ function initializeClientApp() {
   localStorage.setItem("clientAppEnvironment", envParam);
 }
 
+function getOAuthClientID() {
+  return typeof oauthClientID !== "undefined" ? oauthClientID : "";
+}
+
+function buildAuthErrorMessage(error) {
+  const authData = client && client.authData ? client.authData : {};
+  const authError = authData.error || "";
+  const authDescription =
+    authData.error_description || authData.errorDescription || "";
+  const message = error && error.message ? error.message : "";
+  const details = authDescription || message;
+
+  if (/redirect/i.test(details)) {
+    return "Genesys authentication failed because the redirect URI does not match the OAuth client configuration. Please contact your administrator.";
+  }
+
+  if (
+    /access_denied|denied/i.test(authError) ||
+    /access denied/i.test(details)
+  ) {
+    return "Genesys authentication was denied. Please sign in again or contact your administrator if the issue persists.";
+  }
+
+  if (/invalid_client|client/i.test(authError) || /client id/i.test(details)) {
+    return "Genesys authentication failed because the OAuth client configuration is invalid. Please contact your administrator.";
+  }
+
+  if (/state/i.test(authError) || /state/i.test(details)) {
+    return "Genesys authentication failed because the login state could not be validated. Please reopen the integration and sign in again.";
+  }
+
+  if (/expired|session/i.test(details)) {
+    return "Your Genesys session has expired. Please sign in again to continue.";
+  }
+
+  if (details) {
+    return `Genesys authentication failed: ${details}`;
+  }
+
+  return "Genesys authentication failed. Please retry sign-in.";
+}
+
+async function loginWithPKCE(clientId, redirectUri, state) {
+  if (typeof client.loginPKCEGrant !== "function") {
+    throw new Error(
+      "Genesys SDK loginPKCEGrant is unavailable. Update the platform client SDK to use PKCE.",
+    );
+  }
+
+  const options = { state };
+
+  // SDK PKCE login uses redirect flow.
+  return client.loginPKCEGrant(clientId, redirectUri, options);
+}
+
 /**
  * OAuth flow
  */
 function initializeApp() {
   // Determine environment for Genesys Cloud
-  let gCloudEnv = urlParams.get(ENV_QUERY_PARAM);
+  let gCloudEnv = normalizePcEnvironment(urlParams.get(ENV_QUERY_PARAM));
   if (!gCloudEnv) {
     gCloudEnv =
       localStorage.getItem("clientAppEnvironment") || "mypurecloud.com";
@@ -360,17 +429,20 @@ function initializeApp() {
   localStorage.setItem("clientAppEnvironment", gCloudEnv);
 
   client.setEnvironment(gCloudEnv);
-  return client
-    .loginImplicitGrant(
-      // redirectURI and clientID passed by server through global window variables
-      implicitGrantID,
-      appURI,
-      { state: currentConversationId },
-    )
+  const clientId = getOAuthClientID();
+  if (!clientId) {
+    return Promise.reject(
+      new Error(
+        "Missing Genesys OAuth client ID. Set genesysCloud.oauthClientID in config.js.",
+      ),
+    );
+  }
+
+  return loginWithPKCE(clientId, appURI, currentConversationId)
     .then((data) => {
       console.log(data);
       // Assign conversation id
-      currentConversationId = data.state;
+      currentConversationId = data?.state || currentConversationId;
       console.log(`Conversation ID: ${currentConversationId}`);
 
       // Get Details of current User
@@ -390,6 +462,11 @@ function initializeApp() {
     })
     .then((data) => {
       view.showVonageSession(currentConversationId, userMe.name);
+    })
+    .catch((e) => {
+      console.error(e);
+      view.showErrorIframe(buildAuthErrorMessage(e));
+      throw e;
     });
 }
 

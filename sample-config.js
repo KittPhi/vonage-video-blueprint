@@ -15,9 +15,9 @@ module.exports = {
     // eg. 'mypurecloud.ie', 'euw2.pure.cloud', etc...
     region: "mypurecloud.com",
 
-    // Implicit Grant Client ID
+    // Authorization Code + PKCE OAuth Client ID
     // Used by the web app itself in authorizing the Genesys Cloud agent
-    implicitGrantID: "",
+    oauthClientID: "",
 
     // Client Credentials OAuth
     // For authorizing the server app

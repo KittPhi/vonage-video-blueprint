@@ -85,12 +85,13 @@ The Vonage Video integration has the following stages:
 
 1. Go to the [repository](https://github.com/GenesysAppFoundry/genesyscloud-vonage) and clone it to your machine.
 
-### Create an Implicit Grant OAuth
+### Create an OAuth Client for Authorization Code + PKCE
 
-1. Login to your Genesys Cloud organization and create a new OAuth Credential (Implicit Grant). [Create an OAuth Client](https://help.mypurecloud.com/articles/create-an-oauth-client/)
-2. Add **https://localhost/** to the **Authorized redirect URIs**. Note: If you've changed the **redirecUri** value in the config file, then you need to add that new URI instead.
-3. In the Scope section, add **users**, **conversations** and **notifications**.
-4. Take note of the Client ID. It will be used in the configuration of the project.
+1. Login to your Genesys Cloud organization and create a new OAuth Credential configured for Authorization Code + PKCE. [Create an OAuth Client](https://help.mypurecloud.com/articles/create-an-oauth-client/)
+2. Add **https://localhost/** (or your configured app URL) to **Authorized redirect URIs**.
+3. Add your app host to **Allowed Origins** (for local testing, this is usually **https://localhost**).
+4. In the Scope section, add **users**, **conversations**, and **notifications**.
+5. Take note of the Client ID. It will be used in the project configuration as **genesysCloud.oauthClientID**.
 
 ### Create a Client Credentials OAuth Grant for Genesys Cloud
 
@@ -106,7 +107,7 @@ The Vonage Video integration has the following stages:
 ### Create a configuration file
 
 1. In the project directory, make a copy of the [sample-config.js](https://github.com/MyPureCloud/vonage-video-blueprint/blob/master/sample-config.js) file and rename it to **config.js**.
-2. Enter the values required in the file.
+2. Enter the values required in the file, including **genesysCloud.oauthClientID** for PKCE sign-in.
 
 ### (Optional) Set up an Email Queue for email invitations
 
@@ -163,7 +164,7 @@ https://localhost/?conversationid={{gcConversationId}}&language={{gcLangTag}}&en
 In the Iframe Sandbox Options, enter the following:
 
 ```
-allow-forms,allow-modals,allow-popups,allow-presentation,allow-same-origin,allow-scripts,allow-downloads
+allow-forms,allow-modals,allow-presentation,allow-same-origin,allow-scripts,allow-downloads
 ```
 
 In the Iframe Feature/Permissions Policy, enter the following:

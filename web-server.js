@@ -31,16 +31,16 @@ app.use(express.static(__dirname + "/public"));
 
 app.get("/", async (req, res) => {
   let emailQueueID = config.genesysCloud.emailQueueID;
-  let implicitGrantID = config.genesysCloud.implicitGrantID;
+  const oauthClientID = config.genesysCloud.oauthClientID;
 
-  if (!appURI || !implicitGrantID) {
+  if (!appURI || !oauthClientID) {
     console.error("Some configuration items empty.");
     res.status(500).end();
   } else {
     res.render("index.ejs", {
       appURI: appURI,
       emailQueueID: emailQueueID,
-      implicitGrantID: implicitGrantID,
+      oauthClientID: oauthClientID,
     });
   }
 });
